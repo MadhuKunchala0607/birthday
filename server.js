@@ -1,8 +1,7 @@
-// server.js
 import express from 'express';
 import mongoose from 'mongoose';
 import dotenv from 'dotenv';
-import Birthday from './models/birthday.js'; // Ensure to use the .js extension
+import Birthday from './models/birthday.js';
 import nodemailer from 'nodemailer';
 
 dotenv.config();
@@ -12,9 +11,12 @@ app.use(express.json()); // Middleware to parse JSON
 app.use(express.static('public')); // Serve static files from the public directory
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+})
     .then(() => console.log('MongoDB connected'))
-    .catch(err => console.error(err));
+    .catch(err => console.error('MongoDB connection error:', err));
 
 // Route to add a birthday
 app.post('/birthday', async (req, res) => {
@@ -25,7 +27,8 @@ app.post('/birthday', async (req, res) => {
         await birthday.save();
         res.status(201).json(birthday);
     } catch (error) {
-        res.status(400).json({ error: error.message });
+        console.error('Error adding birthday:', error);
+        res.status(400).json({ error: 'Error adding birthday: ' + error.message });
     }
 });
 
@@ -35,7 +38,8 @@ app.get('/birthdays', async (req, res) => {
         const birthdays = await Birthday.find();
         res.status(200).json(birthdays);
     } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error fetching birthdays:', error);
+        res.status(500).json({ error: 'Error fetching birthdays: ' + error.message });
     }
 });
 
@@ -46,7 +50,7 @@ const sendBirthdayEmails = async () => {
 
     try {
         const birthdays = await Birthday.find();
-        birthdays.forEach(async (birthday) => {
+        for (const birthday of birthdays) {
             const userBirthday = new Date(birthday.date);
 
             // Check if today's date matches the user's birthday
@@ -63,22 +67,26 @@ const sendBirthdayEmails = async () => {
                     from: process.env.EMAIL_USER,
                     to: birthday.email,
                     subject: 'Happy Birthday!',
-                    text: `Happy Birthday ${birthday.name}!`,
+                    text: `Happy Birthday ${birthday.name}! We hope you have an amazing day!`,
                 };
 
                 await transporter.sendMail(mailOptions);
                 console.log(`Email sent to ${birthday.email}`);
             }
-        });
+        }
     } catch (error) {
         console.error('Error sending birthday emails:', error);
     }
 };
 
-// Call the sendBirthdayEmails function on server start (you may want to adjust this logic)
+// Schedule the function to run once every day
 sendBirthdayEmails();
 
 // Start the server
+import cors from 'cors';
+
+app.use(cors()); // Enable CORS for all routes
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

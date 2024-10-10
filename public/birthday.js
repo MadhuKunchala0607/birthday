@@ -8,6 +8,17 @@ function fetchAndDisplayBirthdays() {
             return response.json(); // Parse the JSON response
         })
         .then(data => {
+            const container = document.getElementsByClassName("cont")[0];
+            const fragment = document.createDocumentFragment(); // Use DocumentFragment for performance
+
+            // Check if there are no birthdays
+            if (data.length === 0) {
+                const noBirthdaysMessage = document.createElement('p');
+                noBirthdaysMessage.textContent = 'No birthdays to display.';
+                container.appendChild(noBirthdaysMessage);
+                return;
+            }
+
             const today = new Date();
             data.forEach((val) => {
                 // Check if val.date is a string and convert it to a Date object
@@ -21,7 +32,7 @@ function fetchAndDisplayBirthdays() {
 
                 console.log(happy_birthday);
 
-                // Display all birthdays regardless of the current date
+                // Create the profile card elements
                 const containerDiv = document.createElement('div');
                 containerDiv.className = 'profile-card-container';
 
@@ -35,8 +46,9 @@ function fetchAndDisplayBirthdays() {
                 const link = document.createElement('a');
                 link.href = '#';
 
+                // Use a user-specific image if available, else a default image
                 const img = document.createElement('img');
-                img.src = 'img.jpg'; // Ensure you have a valid image
+                img.src = 'img.jpg'; // Replace with dynamic user image if applicable
                 img.alt = 'Profile Picture';
 
                 link.appendChild(img);
@@ -50,24 +62,28 @@ function fetchAndDisplayBirthdays() {
                 h2.textContent = val.name; // Accessing name from the database
 
                 const p = document.createElement('p');
-                p.textContent = `DOB: ${happy_birthday.toLocaleDateString()} ${today.getMonth() == happy_birthday.getMonth() && today.getDate() == happy_birthday.getDate() ? 'Celebrating birthday today' : ''}`;
+                p.textContent = `DOB: ${happy_birthday.toLocaleDateString()} ${today.getMonth() === happy_birthday.getMonth() && today.getDate() === happy_birthday.getDate() ? 'Celebrating birthday today' : ''}`;
 
                 bioDiv.appendChild(h2);
                 bioDiv.appendChild(p);
 
                 profileCardDiv.appendChild(header);
                 profileCardDiv.appendChild(bioDiv);
-
                 containerDiv.appendChild(profileCardDiv);
 
-                // Append to the container in the HTML
-                const a = document.getElementsByClassName("cont")[0];
-                a.appendChild(containerDiv);
-                a.className = "cont";
+                // Append to the document fragment instead of the DOM directly
+                fragment.appendChild(containerDiv);
             });
+
+            // Append the fragment to the container in the HTML
+            container.appendChild(fragment);
         })
         .catch(error => {
             console.error('There was a problem with the fetch operation:', error);
+            const container = document.getElementsByClassName("cont")[0];
+            const errorMessage = document.createElement('p');
+            errorMessage.textContent = 'Error fetching birthdays. Please try again later.';
+            container.appendChild(errorMessage);
         });
 }
 
